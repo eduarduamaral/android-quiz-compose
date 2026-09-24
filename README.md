@@ -27,7 +27,7 @@ actually persisted to disk rather than kept only in memory.
 - [x] Written in **Kotlin**.
 - [x] **Jetpack Compose** for every screen (Material 3).
 - [x] Local persistence of players and scores (**Room**) — see the score history screen.
-- [x] Automated **unit tests** covering the core business logic (18 JVM tests).
+- [x] Automated **unit tests** covering the core business logic (23 JVM tests).
 
 ### Bonus
 
@@ -45,7 +45,7 @@ actually persisted to disk rather than kept only in memory.
       `BadRequest` (400), `NotFound` (404), `ServerError` (5xx) — plus `Network` and
       `Unknown`, so the UI never deals with raw HTTP codes or exceptions.
 - [x] **Integration tests** for the main business logic (MockWebServer + an instrumented
-      Room test) — 2 extra tests beyond the mandatory unit tests, 20 in total.
+      Room test) — 2 extra tests beyond the mandatory unit tests, 25 in total.
 - [x] This **README** with setup instructions, architecture and documented assumptions.
 - [x] **CI** (GitHub Actions) running the full test suite and a debug build on every push.
 
@@ -185,6 +185,26 @@ Room even exist.
   made, so that I can visualize the score of every user at all times") is treated as a
   real screen, not just silent persistence — reachable both from the name entry screen
   and from the result screen.
+- **Re-entrancy guards against fast double-taps.** `onSubmitAnswer()` and
+  `loadNextQuestion()` both guard against being triggered a second time before their
+  first network call resolves (a fast double-tap on "Confirmar"/"Próxima pergunta"
+  otherwise races two coroutines updating the same `QuizSession`, which can double-count
+  a question or, on the last question, save the score twice). Covered by dedicated
+  regression tests in `QuizViewModelTest`.
+- **Quiz progress survives process death, not just rotation.** `answeredCount`,
+  `correctCount` and `seenQuestionIds` are persisted to `SavedStateHandle` after every
+  answer and restored when the ViewModel is recreated, so backgrounding the app long
+  enough for the OS to kill its process mid-quiz resumes from the right question instead
+  of silently resetting to question 1. The in-progress *current* question itself is not
+  persisted this way (only its id would be recoverable, not the full statement/options),
+  so a restore always re-fetches the next question for the restored session -- an
+  acceptable, minor loss of exactly one unsubmitted in-flight selection, not of overall
+  quiz progress.
+- **Malformed question responses fail loudly instead of soft-locking the UI.**
+  `QuizRepositoryImpl` rejects any question with fewer than 2 options as a failure
+  (mapped to `AppError.Unknown`) rather than rendering an unanswerable question with no
+  visible error, since the submit button would otherwise stay permanently disabled with
+  no explanation.
 
 ### Business-rule assumptions (documented per the challenge's instructions)
 
@@ -215,7 +235,7 @@ plugin version available at the time only supports AGP 9+.
 
 ## Testing strategy
 
-20 automated tests in total:
+25 automated tests in total:
 
 | Type | Location | What it covers |
 |---|---|---|

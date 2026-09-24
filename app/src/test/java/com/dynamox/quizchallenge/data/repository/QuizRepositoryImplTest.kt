@@ -55,6 +55,22 @@ class QuizRepositoryImplTest {
     }
 
     @Test
+    fun `fetchQuestion fails when the response has fewer than 2 options`() = runTest {
+        // A structurally valid but unusable response (e.g. a backend bug returning an empty or
+        // single-option question) must not silently render an unanswerable question; it should
+        // surface as a failure so the UI shows a retryable error state instead.
+        server.enqueue(
+            MockResponse().setResponseCode(200)
+                .setBody("""{"id":"22","statement":"What?","options":["Only one"]}"""),
+        )
+
+        val result = repository.fetchQuestion()
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.Unknown)
+    }
+
+    @Test
     fun `fetchQuestion maps a 500 response to AppError ServerError`() = runTest {
         server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
 

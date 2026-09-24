@@ -41,8 +41,11 @@ class QuizViewModelTest {
 
     private fun question(id: String) = Question(id = id, statement = "Statement $id", options = listOf("A", "B"))
 
-    private fun createViewModel(playerName: String = "Ada"): QuizViewModel = QuizViewModel(
-        savedStateHandle = SavedStateHandle(mapOf("playerName" to playerName)),
+    private fun createViewModel(
+        playerName: String = "Ada",
+        savedState: Map<String, Any> = emptyMap(),
+    ): QuizViewModel = QuizViewModel(
+        savedStateHandle = SavedStateHandle(mapOf("playerName" to playerName) + savedState),
         getUniqueQuestion = GetUniqueQuestionUseCase(quizRepository),
         submitAnswerUseCase = SubmitAnswerUseCase(quizRepository),
         saveScoreUseCase = SaveScoreUseCase(scoreRepository),
@@ -156,6 +159,113 @@ class QuizViewModelTest {
             awaitItem() // Loading
             val state = awaitItem() as QuizUiState.InProgress
             assertEquals("1", state.question.id)
+        }
+    }
+
+    @Test
+    fun `a fast double-tap on submit only counts the answer once`() = runTest {
+        // Regression test: onSubmitAnswer() used to only guard on isAnswerRevealed, which stays
+        // false until the *first* call's network response comes back. Calling it twice in a row
+        // (before either coroutine has had a chance to run) used to schedule two submissions for
+        // a single tap, double-counting the score.
+        quizRepository.enqueueQuestion(question("1"))
+        quizRepository.answerResult = true
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            awaitItem() // InProgress, unanswered
+            viewModel.onOptionSelected("A")
+            awaitItem() // selected
+
+            viewModel.onSubmitAnswer()
+            viewModel.onSubmitAnswer() // simulated fast double-tap, before the first call resolves
+
+            awaitItem() // isSubmitting = true
+            val revealed = awaitItem() as QuizUiState.InProgress
+            assertEquals(1, revealed.correctCountSoFar)
+            expectNoEvents()
+        }
+        assertEquals(1, quizRepository.submitAnswerCallCount)
+    }
+
+    @Test
+    fun `a fast double-tap on submit does not save the score twice on the last question`() = runTest {
+        quizRepository.enqueueQuestion(question("10"))
+        quizRepository.answerResult = true
+        // Pre-seed progress as if 9 questions were already answered, so this is the 10th/last one.
+        val viewModel = createViewModel(
+            savedState = mapOf(
+                "quiz_answeredCount" to 9,
+                "quiz_correctCount" to 9,
+                "quiz_seenQuestionIds" to ArrayList((1..9).map { it.toString() }),
+            ),
+        )
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            awaitItem() // InProgress, unanswered
+            viewModel.onOptionSelected("A")
+            awaitItem() // selected
+
+            viewModel.onSubmitAnswer()
+            viewModel.onSubmitAnswer() // simulated fast double-tap
+
+            awaitItem() // isSubmitting = true
+            awaitItem() // revealed
+            expectNoEvents()
+        }
+        assertEquals(1, scoreRepository.savedScores.size)
+    }
+
+    @Test
+    fun `a fast double-tap on next question only fetches one question`() = runTest {
+        quizRepository.enqueueQuestion(question("1"))
+        quizRepository.enqueueQuestion(question("2"))
+        quizRepository.answerResult = true
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            awaitItem() // InProgress, unanswered
+            viewModel.onOptionSelected("A")
+            awaitItem() // selected
+            viewModel.onSubmitAnswer()
+            awaitItem() // isSubmitting = true
+            awaitItem() // revealed
+
+            viewModel.onNextQuestion()
+            viewModel.onNextQuestion() // simulated fast double-tap, before the first fetch resolves
+
+            awaitItem() // Loading
+            val state = awaitItem() as QuizUiState.InProgress
+            assertEquals("2", state.question.id)
+            expectNoEvents()
+        }
+        // Only one of the two enqueued follow-up fetches should have been consumed: the initial
+        // load already consumed question "1", so exactly one more call for question "2".
+        assertEquals(2, quizRepository.fetchQuestionCallCount)
+    }
+
+    @Test
+    fun `restores progress from SavedStateHandle after process death`() = runTest {
+        // Simulates the ViewModel being recreated after the OS killed the process mid-quiz:
+        // progress persisted via SavedStateHandle should be picked up instead of starting over.
+        quizRepository.enqueueQuestion(question("2")) // already seen -> triggers a retry
+        quizRepository.enqueueQuestion(question("4")) // fresh question
+        val viewModel = createViewModel(
+            savedState = mapOf(
+                "quiz_answeredCount" to 3,
+                "quiz_correctCount" to 2,
+                "quiz_seenQuestionIds" to ArrayList(listOf("1", "2", "3")),
+            ),
+        )
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            val state = awaitItem() as QuizUiState.InProgress
+            assertEquals(4, state.questionNumber) // answeredCount (3) + 1, not restarted from 1
+            assertEquals("4", state.question.id) // skipped the already-seen "2"
         }
     }
 }
