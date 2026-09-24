@@ -1,5 +1,10 @@
 package com.dynamox.quizchallenge.ui.navigation
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -11,9 +16,37 @@ import com.dynamox.quizchallenge.ui.nameentry.NameEntryScreen
 import com.dynamox.quizchallenge.ui.quiz.QuizScreen
 import com.dynamox.quizchallenge.ui.result.ResultScreen
 
+// Shared slide+fade transitions for every destination, so moving forward in the quiz flow
+// (name -> quiz -> result) and back always feels directional and consistent, instead of the
+// default abrupt cut.
+private const val TRANSITION_DURATION_MILLIS = 300
+
+private val enterTransition = slideInHorizontally(
+    initialOffsetX = { fullWidth -> fullWidth / 4 },
+) + fadeIn(animationSpec = tween(TRANSITION_DURATION_MILLIS))
+
+private val exitTransition = slideOutHorizontally(
+    targetOffsetX = { fullWidth -> -fullWidth / 4 },
+) + fadeOut(animationSpec = tween(TRANSITION_DURATION_MILLIS))
+
+private val popEnterTransition = slideInHorizontally(
+    initialOffsetX = { fullWidth -> -fullWidth / 4 },
+) + fadeIn(animationSpec = tween(TRANSITION_DURATION_MILLIS))
+
+private val popExitTransition = slideOutHorizontally(
+    targetOffsetX = { fullWidth -> fullWidth / 4 },
+) + fadeOut(animationSpec = tween(TRANSITION_DURATION_MILLIS))
+
 @Composable
 fun QuizNavHost(navController: NavHostController = rememberNavController()) {
-    NavHost(navController = navController, startDestination = QuizDestination.NameEntry) {
+    NavHost(
+        navController = navController,
+        startDestination = QuizDestination.NameEntry,
+        enterTransition = { enterTransition },
+        exitTransition = { exitTransition },
+        popEnterTransition = { popEnterTransition },
+        popExitTransition = { popExitTransition },
+    ) {
         composable<QuizDestination.NameEntry> {
             NameEntryScreen(
                 onStartQuiz = { name -> navController.navigate(QuizDestination.Quiz(name)) },

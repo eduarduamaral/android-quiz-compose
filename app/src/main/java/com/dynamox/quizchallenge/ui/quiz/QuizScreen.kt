@@ -1,5 +1,13 @@
 package com.dynamox.quizchallenge.ui.quiz
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -99,8 +107,13 @@ private fun QuestionContent(
     onNext: (QuizUiState.InProgress) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
+        val animatedProgress by animateFloatAsState(
+            targetValue = state.questionNumber / state.totalQuestions.toFloat(),
+            animationSpec = tween(400),
+            label = "quiz_progress",
+        )
         LinearProgressIndicator(
-            progress = { state.questionNumber / state.totalQuestions.toFloat() },
+            progress = { animatedProgress },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(16.dp))
@@ -131,8 +144,15 @@ private fun QuestionContent(
 
         Spacer(Modifier.height(16.dp))
 
-        if (state.isAnswerRevealed) {
+        AnimatedVisibility(
+            visible = state.isAnswerRevealed,
+            enter = fadeIn(tween(300)) + expandVertically(tween(300)),
+            exit = fadeOut(tween(150)) + shrinkVertically(tween(150)),
+        ) {
             AnswerFeedback(isCorrect = state.revealedCorrect == true)
+        }
+
+        if (state.isAnswerRevealed) {
             Spacer(Modifier.height(16.dp))
             Button(onClick = { onNext(state) }, modifier = Modifier.fillMaxWidth()) {
                 Text(
@@ -169,12 +189,13 @@ private fun OptionRow(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val containerColor = when {
+    val targetColor = when {
         revealedCorrect != null && selected && revealedCorrect -> MaterialTheme.colorScheme.primaryContainer
         revealedCorrect != null && selected -> MaterialTheme.colorScheme.errorContainer
         selected -> MaterialTheme.colorScheme.secondaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
+    val containerColor by animateColorAsState(targetValue = targetColor, label = "option_color")
     Surface(
         color = containerColor,
         shape = MaterialTheme.shapes.medium,
@@ -223,7 +244,8 @@ private fun ErrorContent(error: AppError, onRetry: () -> Unit, modifier: Modifie
 @Composable
 private fun AppError.toMessage(): String = when (this) {
     AppError.Network -> stringResource(R.string.error_network)
-    AppError.InvalidRequest -> stringResource(R.string.error_question_not_found)
-    AppError.Server -> stringResource(R.string.error_server)
+    AppError.BadRequest -> stringResource(R.string.error_bad_request)
+    AppError.NotFound -> stringResource(R.string.error_not_found)
+    AppError.ServerError -> stringResource(R.string.error_server)
     is AppError.Unknown -> stringResource(R.string.error_unknown)
 }

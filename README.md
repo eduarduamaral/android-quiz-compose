@@ -27,22 +27,25 @@ actually persisted to disk rather than kept only in memory.
 - [x] Written in **Kotlin**.
 - [x] **Jetpack Compose** for every screen (Material 3).
 - [x] Local persistence of players and scores (**Room**) — see the score history screen.
-- [x] Automated **unit tests** covering the core business logic (17 JVM tests).
+- [x] Automated **unit tests** covering the core business logic (18 JVM tests).
 
 ### Bonus
 
 - [x] **Dependency Injection** with **Hilt**.
 - [x] **Kotlin Coroutines + Flow** for all asynchronous/reactive work.
-- [x] Consistent Material 3 design (dynamic color on Android 12+), simple built-in
-      Compose transitions, custom launcher icon.
+- [x] Consistent Material 3 design (dynamic color on Android 12+), custom launcher
+      icon, and animations: slide/fade transitions between screens, an animated
+      progress bar, animated option-selection colors, and an animated reveal of the
+      correct/incorrect feedback.
 - [x] **Layered architecture**: `data` / `domain` / `ui`, each with a single responsibility.
 - [x] Design patterns: **Repository** (abstracts the data sources from the domain) and
       **Use Case** (one class per business operation, e.g. `GetUniqueQuestionUseCase`).
 - [x] **Consistent error handling**: HTTP responses are mapped to a small `AppError`
-      sealed class (`Network`, `InvalidRequest` for 4xx, `Server` for 5xx, `Unknown`),
-      so the UI never deals with raw HTTP codes or exceptions.
+      sealed class with one case per status code called out by the challenge —
+      `BadRequest` (400), `NotFound` (404), `ServerError` (5xx) — plus `Network` and
+      `Unknown`, so the UI never deals with raw HTTP codes or exceptions.
 - [x] **Integration tests** for the main business logic (MockWebServer + an instrumented
-      Room test) — 2 extra tests beyond the mandatory unit tests, 19 in total.
+      Room test) — 2 extra tests beyond the mandatory unit tests, 20 in total.
 - [x] This **README** with setup instructions, architecture and documented assumptions.
 - [x] **CI** (GitHub Actions) running the full test suite and a debug build on every push.
 
@@ -165,11 +168,15 @@ Room even exist.
   ViewModel) keeps this rule fully unit-testable without any Android dependencies.
 - **Consistent error handling.** `safeApiCall` (in `data/remote/ApiErrorMapper.kt`) is
   the single place that turns Retrofit/OkHttp exceptions and HTTP status codes into a
-  small `AppError` sealed class. This includes a real quirk of the backend discovered
-  while testing it manually: an invalid `questionId` returns HTTP 400 with a **plain
-  text** body (`"400 BAD REQUEST: Question not found."`), not JSON — the error mapper
-  only looks at the status code, so it doesn't matter whether the body is JSON or not,
-  and this exact scenario is covered by an integration test.
+  small `AppError` sealed class, modeled after the specific status codes called out by
+  the challenge (400/404/500) rather than broad "4xx/5xx" buckets. This includes a real
+  quirk of the backend discovered while testing it manually: an invalid `questionId`
+  returns HTTP **400** (mapped to `AppError.BadRequest`) with a **plain text** body
+  (`"400 BAD REQUEST: Question not found."`), not JSON, and not a 404 as REST
+  conventions might suggest — the error mapper only looks at the status code, so it
+  doesn't matter whether the body is JSON or not, and this exact scenario (plus a
+  synthetic 404 case, since the real backend never actually returns one) is covered by
+  integration tests.
 - **`NameEntryScreen` intentionally has no ViewModel.** Its only state is the text the
   player is typing, which `rememberSaveable` already survives configuration changes and
   process death; adding a ViewModel here would only add ceremony without adding
@@ -208,7 +215,7 @@ plugin version available at the time only supports AGP 9+.
 
 ## Testing strategy
 
-19 automated tests in total:
+20 automated tests in total:
 
 | Type | Location | What it covers |
 |---|---|---|

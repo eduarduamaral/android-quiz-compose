@@ -18,8 +18,9 @@ suspend fun <T> safeApiCall(block: suspend () -> T): Result<T> = try {
     Result.success(block())
 } catch (e: HttpException) {
     val error = when (e.code()) {
-        in 400..499 -> AppError.InvalidRequest
-        in 500..599 -> AppError.Server
+        400 -> AppError.BadRequest
+        404 -> AppError.NotFound
+        in 500..599 -> AppError.ServerError
         else -> AppError.Unknown(e.message())
     }
     Result.failure(error)

@@ -55,16 +55,16 @@ class QuizRepositoryImplTest {
     }
 
     @Test
-    fun `fetchQuestion maps a 500 response to AppError Server`() = runTest {
+    fun `fetchQuestion maps a 500 response to AppError ServerError`() = runTest {
         server.enqueue(MockResponse().setResponseCode(500).setBody("boom"))
 
         val result = repository.fetchQuestion()
 
-        assertEquals(AppError.Server, result.exceptionOrNull())
+        assertEquals(AppError.ServerError, result.exceptionOrNull())
     }
 
     @Test
-    fun `submitAnswer maps a plain-text 400 response to AppError InvalidRequest`() = runTest {
+    fun `submitAnswer maps a plain-text 400 response to AppError BadRequest`() = runTest {
         // The real backend returns a *plain text* body (not JSON) for this error, e.g.
         // "400 BAD REQUEST: Question not found." This guards against ever assuming the
         // error body is parseable JSON.
@@ -72,7 +72,19 @@ class QuizRepositoryImplTest {
 
         val result = repository.submitAnswer("unknown-id", "A")
 
-        assertEquals(AppError.InvalidRequest, result.exceptionOrNull())
+        assertEquals(AppError.BadRequest, result.exceptionOrNull())
+    }
+
+    @Test
+    fun `fetchQuestion maps a 404 response to AppError NotFound`() = runTest {
+        // The real backend doesn't happen to return 404 for anything today (an unknown
+        // questionId comes back as 400, see the test above), but the mapper still handles
+        // this status code explicitly and correctly per the challenge's error-handling bonus.
+        server.enqueue(MockResponse().setResponseCode(404).setBody("Not Found"))
+
+        val result = repository.fetchQuestion()
+
+        assertEquals(AppError.NotFound, result.exceptionOrNull())
     }
 
     @Test
