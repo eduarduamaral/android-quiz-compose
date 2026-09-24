@@ -45,6 +45,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dynamox.quizchallenge.R
 import com.dynamox.quizchallenge.domain.model.AppError
+import com.dynamox.quizchallenge.ui.theme.SuccessGreen
+import com.dynamox.quizchallenge.ui.theme.SuccessGreenContainer
 
 @Composable
 fun QuizScreen(
@@ -190,7 +192,7 @@ private fun OptionRow(
     onClick: () -> Unit,
 ) {
     val targetColor = when {
-        revealedCorrect != null && selected && revealedCorrect -> MaterialTheme.colorScheme.primaryContainer
+        revealedCorrect != null && selected && revealedCorrect -> SuccessGreenContainer
         revealedCorrect != null && selected -> MaterialTheme.colorScheme.errorContainer
         selected -> MaterialTheme.colorScheme.secondaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
@@ -223,7 +225,7 @@ private fun AnswerFeedback(isCorrect: Boolean) {
     } else {
         R.string.quiz_incorrect_icon_description
     }
-    val tint = if (isCorrect) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+    val tint = if (isCorrect) SuccessGreen else MaterialTheme.colorScheme.error
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(imageVector = icon, contentDescription = stringResource(descriptionRes), tint = tint)
