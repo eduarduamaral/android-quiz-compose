@@ -3,14 +3,12 @@ package com.dynamox.quizchallenge.ui.quiz
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.navigation.toRoute
 import com.dynamox.quizchallenge.domain.model.AppError
 import com.dynamox.quizchallenge.domain.model.Question
 import com.dynamox.quizchallenge.domain.model.QuizSession
 import com.dynamox.quizchallenge.domain.usecase.GetUniqueQuestionUseCase
 import com.dynamox.quizchallenge.domain.usecase.SaveScoreUseCase
 import com.dynamox.quizchallenge.domain.usecase.SubmitAnswerUseCase
-import com.dynamox.quizchallenge.ui.navigation.QuizDestination
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +24,14 @@ class QuizViewModel @Inject constructor(
     private val saveScoreUseCase: SaveScoreUseCase,
 ) : ViewModel() {
 
-    private var session = QuizSession.start(savedStateHandle.toRoute<QuizDestination.Quiz>().playerName)
+    // Read the nav argument by its key (matches QuizDestination.Quiz.playerName) instead of
+    // using SavedStateHandle.toRoute(), whose decoder goes through android.os.Bundle under the
+    // hood -- that makes it work fine on a device, but throws "not mocked" in plain JVM unit
+    // tests. A direct key lookup behaves identically at runtime and keeps the ViewModel testable
+    // without Robolectric.
+    private var session = QuizSession.start(
+        checkNotNull(savedStateHandle.get<String>(PLAYER_NAME_ARG)) { "Missing '$PLAYER_NAME_ARG' navigation argument" },
+    )
     private var currentQuestion: Question? = null
 
     private val _uiState = MutableStateFlow<QuizUiState>(QuizUiState.Loading)
@@ -95,4 +100,8 @@ class QuizViewModel @Inject constructor(
     }
 
     private fun Throwable.toAppError(): AppError = this as? AppError ?: AppError.Unknown(message)
+
+    private companion object {
+        const val PLAYER_NAME_ARG = "playerName"
+    }
 }
