@@ -25,7 +25,5 @@ data class QuizSession(
 
     companion object {
         const val TOTAL_QUESTIONS = 10
-
-        fun start(playerName: String): QuizSession = QuizSession(playerName = playerName)
     }
 }
