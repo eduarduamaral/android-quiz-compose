@@ -182,6 +182,31 @@ imports, so its use cases are trivial to unit test in plain JVM tests. `data` de
 `domain` only, through Hilt-injected use cases; it is never aware that the network or
 Room even exist.
 
+```mermaid
+flowchart TD
+    subgraph UI ["UI Layer"]
+        Screens["Compose Screens"]
+        ViewModels["ViewModels"]
+        Screens -- "Events / StateFlow" --> ViewModels
+    end
+
+    subgraph Domain ["Domain Layer"]
+        UseCases["Use Cases"]
+        RepoInterfaces["Repository Interfaces"]
+        ViewModels -- "Calls" --> UseCases
+        UseCases -- "Delegates to" --> RepoInterfaces
+    end
+
+    subgraph Data ["Data Layer"]
+        RepoImpl["Repository Implementations"]
+        RemoteAPI["Retrofit API (Backend)"]
+        LocalDB["Room Database (SQLite)"]
+        RepoInterfaces -. "Implemented by" .-> RepoImpl
+        RepoImpl -- "Network calls" --> RemoteAPI
+        RepoImpl -- "Reads / Writes" --> LocalDB
+    end
+```
+
 ### Key design decisions
 
 - **Repository + Use Case pattern.** Each `XxxUseCase` wraps exactly one business
