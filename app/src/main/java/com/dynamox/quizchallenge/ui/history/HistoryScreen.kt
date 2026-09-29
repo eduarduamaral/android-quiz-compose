@@ -1,12 +1,17 @@
 package com.dynamox.quizchallenge.ui.history
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -65,13 +70,25 @@ fun HistoryScreen(
         ) {
             when (val state = uiState) {
                 HistoryUiState.Loading -> CircularProgressIndicator(Modifier.align(Alignment.Center))
-                HistoryUiState.Empty -> Text(
-                    text = stringResource(R.string.history_empty_state),
+                HistoryUiState.Empty -> Column(
                     modifier = Modifier
                         .align(Alignment.Center)
                         .padding(24.dp),
-                    textAlign = TextAlign.Center,
-                )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Info,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.history_empty_state),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                    )
+                }
 
                 is HistoryUiState.Content -> {
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
