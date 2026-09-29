@@ -6,6 +6,10 @@ questions fetched from the challenge backend, gets immediate feedback on each an
 sees a final score, can restart, and can browse every player's score history.
 
 <p align="center">
+  <img src="docs/screenshots/demo.gif" width="250" alt="Demonstração animada do app" />
+</p>
+
+<p align="center">
   <img src="docs/screenshots/name_entry.png" width="200" alt="Name entry screen" />
   <img src="docs/screenshots/quiz_question.png" width="200" alt="Quiz question" />
   <img src="docs/screenshots/quiz_correct_feedback.png" width="200" alt="Correct answer feedback" />
