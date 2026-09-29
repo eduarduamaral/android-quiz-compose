@@ -200,23 +200,8 @@ private fun OptionRow(
     onClick: () -> Unit,
 ) {
     val isDark = isSystemInDarkTheme()
-    val targetContainerColor = when {
-        revealedCorrect != null && selected && revealedCorrect -> 
-            if (isDark) SuccessGreenContainerDark
-            else SuccessGreenContainerLight
-        revealedCorrect != null && selected -> MaterialTheme.colorScheme.errorContainer
-        selected -> MaterialTheme.colorScheme.secondaryContainer
-        else -> MaterialTheme.colorScheme.surfaceVariant
-    }
-    
-    val targetContentColor = when {
-        revealedCorrect != null && selected && revealedCorrect -> 
-            if (isDark) OnSuccessGreenContainerDark
-            else OnSuccessGreenContainerLight
-        revealedCorrect != null && selected -> MaterialTheme.colorScheme.onErrorContainer
-        selected -> MaterialTheme.colorScheme.onSecondaryContainer
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val targetContainerColor = getTargetContainerColor(isDark, revealedCorrect, selected)
+    val targetContentColor = getTargetContentColor(isDark, revealedCorrect, selected)
 
     val containerColor by animateColorAsState(targetValue = targetContainerColor, label = "option_color")
     val contentColor by animateColorAsState(targetValue = targetContentColor, label = "option_content_color")
@@ -267,6 +252,24 @@ private fun AnswerFeedback(isCorrect: Boolean) {
         Spacer(Modifier.width(8.dp))
         Text(text = stringResource(textRes), color = tint, style = MaterialTheme.typography.titleMedium)
     }
+}
+
+@Composable
+private fun getTargetContainerColor(isDark: Boolean, revealedCorrect: Boolean?, selected: Boolean) = when {
+    revealedCorrect != null && selected && revealedCorrect ->
+        if (isDark) SuccessGreenContainerDark else SuccessGreenContainerLight
+    revealedCorrect != null && selected -> MaterialTheme.colorScheme.errorContainer
+    selected -> MaterialTheme.colorScheme.secondaryContainer
+    else -> MaterialTheme.colorScheme.surfaceVariant
+}
+
+@Composable
+private fun getTargetContentColor(isDark: Boolean, revealedCorrect: Boolean?, selected: Boolean) = when {
+    revealedCorrect != null && selected && revealedCorrect ->
+        if (isDark) OnSuccessGreenContainerDark else OnSuccessGreenContainerLight
+    revealedCorrect != null && selected -> MaterialTheme.colorScheme.onErrorContainer
+    selected -> MaterialTheme.colorScheme.onSecondaryContainer
+    else -> MaterialTheme.colorScheme.onSurfaceVariant
 }
 
 @Composable
