@@ -8,6 +8,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,8 +49,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dynamox.quizchallenge.R
 import com.dynamox.quizchallenge.domain.model.AppError
+import com.dynamox.quizchallenge.ui.theme.OnSuccessGreenContainerDark
+import com.dynamox.quizchallenge.ui.theme.OnSuccessGreenContainerLight
 import com.dynamox.quizchallenge.ui.theme.SuccessGreen
-import com.dynamox.quizchallenge.ui.theme.SuccessGreenContainer
+import com.dynamox.quizchallenge.ui.theme.SuccessGreenContainerDark
+import com.dynamox.quizchallenge.ui.theme.SuccessGreenContainerLight
+import com.dynamox.quizchallenge.ui.theme.SuccessGreenDark
 
 @Composable
 fun QuizScreen(
@@ -194,15 +199,31 @@ private fun OptionRow(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val targetColor = when {
-        revealedCorrect != null && selected && revealedCorrect -> SuccessGreenContainer
+    val isDark = isSystemInDarkTheme()
+    val targetContainerColor = when {
+        revealedCorrect != null && selected && revealedCorrect -> 
+            if (isDark) SuccessGreenContainerDark
+            else SuccessGreenContainerLight
         revealedCorrect != null && selected -> MaterialTheme.colorScheme.errorContainer
         selected -> MaterialTheme.colorScheme.secondaryContainer
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
-    val containerColor by animateColorAsState(targetValue = targetColor, label = "option_color")
+    
+    val targetContentColor = when {
+        revealedCorrect != null && selected && revealedCorrect -> 
+            if (isDark) OnSuccessGreenContainerDark
+            else OnSuccessGreenContainerLight
+        revealedCorrect != null && selected -> MaterialTheme.colorScheme.onErrorContainer
+        selected -> MaterialTheme.colorScheme.onSecondaryContainer
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    val containerColor by animateColorAsState(targetValue = targetContainerColor, label = "option_color")
+    val contentColor by animateColorAsState(targetValue = targetContentColor, label = "option_content_color")
+    
     Surface(
         color = containerColor,
+        contentColor = contentColor,
         shape = MaterialTheme.shapes.medium,
         modifier = Modifier
             .fillMaxWidth()
@@ -221,6 +242,7 @@ private fun OptionRow(
 
 @Composable
 private fun AnswerFeedback(isCorrect: Boolean) {
+    val isDark = isSystemInDarkTheme()
     val icon = if (isCorrect) Icons.Filled.CheckCircle else Icons.Filled.Warning
     val textRes = if (isCorrect) R.string.quiz_correct_feedback else R.string.quiz_incorrect_feedback
     val descriptionRes = if (isCorrect) {
@@ -228,7 +250,11 @@ private fun AnswerFeedback(isCorrect: Boolean) {
     } else {
         R.string.quiz_incorrect_icon_description
     }
-    val tint = if (isCorrect) SuccessGreen else MaterialTheme.colorScheme.error
+    val tint = if (isCorrect) {
+        if (isDark) SuccessGreenDark else SuccessGreen
+    } else {
+        MaterialTheme.colorScheme.error
+    }
 
     Row(
         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
