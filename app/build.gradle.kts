@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.detekt)
 }
 
 // Android Gradle plugin 9+ compiles Kotlin out of the box (no separate `kotlin-android`
@@ -108,4 +109,14 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+detekt {
+    // Baseline records pre-existing findings as accepted, so introducing static analysis into
+    // this already-implemented codebase only fails the build on *new* issues going forward,
+    // rather than requiring a large one-off cleanup pass under time pressure.
+    baseline = file("detekt-baseline.xml")
+    config.setFrom(file("$rootDir/config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+    parallel = true
 }

@@ -72,6 +72,9 @@ value over "using a technology for its own sake":
   This directly addresses a phrase in the challenge's own user story 2 ("I want to know
   the final score for the quiz... so that I could share it with friends") that the
   screen didn't act on before.
+- **Static analysis (detekt)** wired into CI, tuned specifically for how this project uses
+  Compose rather than left at defaults or disabled wholesale — see
+  [Static analysis](#static-analysis) below.
 
 ## Requirements NOT pursued (and why)
 
@@ -123,6 +126,9 @@ command line, with a device/emulator connected:
 
 # Instrumented tests (needs a connected device/emulator; exercises the real Room/SQLite implementation)
 ./gradlew connectedDebugAndroidTest
+
+# Static analysis (detekt)
+./gradlew detekt
 ```
 
 ### Build a debug APK
@@ -257,6 +263,16 @@ live in a top-level `kotlin { compilerOptions {} }` block in
 [`app/build.gradle.kts`](app/build.gradle.kts). This is required because the Hilt Gradle
 plugin version available at the time only supports AGP 9+.
 
+`gradle/gradle-daemon-jvm.properties` pins the Gradle Daemon itself to JDK 17, matching the
+project's `sourceCompatibility`/`targetCompatibility`/Kotlin `jvmTarget` (also 17) and the JDK
+version CI installs. This file is normally auto-generated and easy to end up with an
+inconsistent value in it (this project's copy briefly ended up pinned to JDK 25, whatever JDK
+happened to be on `PATH` when it was generated); with a mismatched value, most of the build
+still works, but tooling that reads the *Gradle daemon's own* JVM version at run time --
+[detekt](https://detekt.dev/), in this project's case -- can fail outright, since its
+supported `--jvm-target` values don't extend to JDK 25 yet. Keeping this file's declared
+version aligned with the rest of the toolchain avoids that class of failure entirely.
+
 ## Testing strategy
 
 28 automated tests in total:
@@ -280,5 +296,25 @@ emissions in ViewModel tests.
 
 [`.github/workflows/android-ci.yml`](https://github.com/eduarduamaral/developer-challenges/blob/eduardo-amaral/.github/workflows/android-ci.yml)
 (at the repository root) runs on every push to this branch and on pull requests
-targeting `main`: it runs the unit test suite and builds a debug APK, uploading the unit
-test report as a workflow artifact.
+targeting `main`: it runs static analysis, the unit test suite, and builds a debug APK,
+uploading both reports as workflow artifacts.
+
+## Static analysis
+
+[Detekt](https://detekt.dev/) runs via `./gradlew detekt`, configured in
+[`config/detekt/detekt.yml`](config/detekt/detekt.yml) (`buildUponDefaultConfig = true`, so
+only the deltas from detekt's default ruleset need to be listed there). Two rules are tuned
+for how this project actually uses Compose rather than disabled wholesale:
+
+- `FunctionNaming` exempts `@Composable` functions, since Compose's own convention is
+  PascalCase for them (e.g. `QuizScreen`), which otherwise conflicts with detekt's default
+  camelCase expectation for ordinary functions.
+- `LongParameterList`'s threshold is raised slightly (6 → 8), since Composables idiomatically
+  take one parameter per piece of UI state plus one callback per user action.
+
+A small [`app/detekt-baseline.xml`](app/detekt-baseline.xml) (3 entries: one long Composable
+function, one multi-guard-clause ViewModel method, one already-documented exception-handling
+trade-off) records pre-existing, reviewed findings as accepted, so introducing static analysis
+into an already-implemented codebase only fails the build on genuinely *new* issues going
+forward -- verified by temporarily introducing an unrelated new violation, confirming
+`./gradlew detekt` failed on it, then reverting.
