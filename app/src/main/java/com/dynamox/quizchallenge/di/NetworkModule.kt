@@ -8,13 +8,18 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
+import okhttp3.Interceptor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+import java.io.IOException
+import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 private const val BASE_URL = "https://quiz-api-bwi5hjqyaq-uc.a.run.app/"
+private const val TIMEOUT_SECONDS = 15L
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -34,7 +39,12 @@ object NetworkModule {
                 HttpLoggingInterceptor.Level.NONE
             }
         }
-        return OkHttpClient.Builder().addInterceptor(logging).build()
+        return OkHttpClient.Builder()
+            .connectTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .readTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .addInterceptor(RetryInterceptor())
+            .addInterceptor(logging)
+            .build()
     }
 
     @Provides
@@ -48,4 +58,28 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideQuizApi(retrofit: Retrofit): QuizApi = retrofit.create(QuizApi::class.java)
+}
+
+private class RetryInterceptor : Interceptor {
+    override fun intercept(chain: Interceptor.Chain): Response {
+        val maxRetries = 2
+        var attempt = 0
+        while (true) {
+            try {
+                return chain.proceed(chain.request())
+            } catch (e: IOException) {
+                if (attempt >= maxRetries) {
+                    throw e
+                }
+                attempt++
+                try {
+                    // Backoff: 500ms, 1000ms...
+                    Thread.sleep(500L * attempt)
+                } catch (_: InterruptedException) {
+                    Thread.currentThread().interrupt()
+                    throw e
+                }
+            }
+        }
+    }
 }
