@@ -253,7 +253,10 @@ private fun AnswerFeedback(isCorrect: Boolean) {
     val tint = if (isCorrect) {
         if (isDark) SuccessGreenDark else SuccessGreen
     } else {
-        MaterialTheme.colorScheme.error
+        if (isDark)
+            MaterialTheme.colorScheme.errorContainer
+        else
+            MaterialTheme.colorScheme.error
     }
 
     Row(
