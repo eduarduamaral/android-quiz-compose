@@ -25,6 +25,10 @@
     <string name="result_restart_button">Jogar novamente</string>
     <string name="result_change_player_button">Trocar de jogador</string>
     <string name="result_history_button">Ver histórico de pontuações</string>
+    <string name="result_share_button">Compartilhar pontuação</string>
+    <string name="result_share_chooser_title">Compartilhar pontuação via</string>
+    <string name="result_share_message">%1$s acertou %2$d de %3$d perguntas no Quiz Dynamox! 🎉</string>
+    <string name="result_share_icon_description">Compartilhar</string>
 
     <!-- History screen -->
     <string name="history_title">Histórico de pontuações</string>

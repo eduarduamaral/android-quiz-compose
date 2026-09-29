@@ -27,7 +27,7 @@ actually persisted to disk rather than kept only in memory.
 - [x] Written in **Kotlin**.
 - [x] **Jetpack Compose** for every screen (Material 3).
 - [x] Local persistence of players and scores (**Room**) — see the score history screen.
-- [x] Automated **unit tests** covering the core business logic (23 JVM tests).
+- [x] Automated **unit tests** covering the core business logic (26 JVM tests).
 
 ### Bonus
 
@@ -45,7 +45,7 @@ actually persisted to disk rather than kept only in memory.
       `BadRequest` (400), `NotFound` (404), `ServerError` (5xx) — plus `Network` and
       `Unknown`, so the UI never deals with raw HTTP codes or exceptions.
 - [x] **Integration tests** for the main business logic (MockWebServer + an instrumented
-      Room test) — 2 extra tests beyond the mandatory unit tests, 25 in total.
+      Room test) — 2 extra tests beyond the mandatory unit tests, 28 in total.
 - [x] This **README** with setup instructions, architecture and documented assumptions.
 - [x] **CI** (GitHub Actions) running the full test suite and a debug build on every push.
 
@@ -259,13 +259,14 @@ plugin version available at the time only supports AGP 9+.
 
 ## Testing strategy
 
-25 automated tests in total:
+28 automated tests in total:
 
 | Type | Location | What it covers |
 |---|---|---|
 | Unit (JVM) | `app/src/test/.../domain/usecase/GetUniqueQuestionUseCaseTest.kt` | Duplicate-question retry/fallback logic |
 | Unit (JVM) | `app/src/test/.../ui/quiz/QuizViewModelTest.kt` | Full quiz flow: loading, selecting an option, correct/incorrect reveal, advancing, saving the final score on the 10th question, error state + retry |
 | Unit (JVM) | `app/src/test/.../ui/history/HistoryViewModelTest.kt` | Empty state and reflecting saved scores |
+| Unit (JVM) | `app/src/test/.../ui/result/ShareScoreTextTest.kt` | Share-message placeholder substitution (player name, correct count, total questions) |
 | Integration (JVM + MockWebServer) | `app/src/test/.../data/repository/QuizRepositoryImplTest.kt` | Exercises the real Retrofit/OkHttp/kotlinx.serialization wiring against a local HTTP server, including the plain-text HTTP 400 body observed from the real backend |
 | Integration (instrumented) | `app/src/androidTest/.../data/local/PlayerScoreDaoTest.kt` | Room DAO against a real SQLite implementation on a device/emulator |
 

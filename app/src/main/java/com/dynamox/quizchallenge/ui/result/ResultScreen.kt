@@ -1,5 +1,6 @@
 package com.dynamox.quizchallenge.ui.result
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -7,7 +8,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -16,6 +21,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,6 +37,10 @@ fun ResultScreen(
     onViewHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
+    val shareMessageTemplate = stringResource(R.string.result_share_message)
+    val shareChooserTitle = stringResource(R.string.result_share_chooser_title)
+
     Scaffold(modifier = modifier) { padding ->
         Column(
             modifier = Modifier
@@ -51,7 +61,25 @@ fun ResultScreen(
                 style = MaterialTheme.typography.titleLarge,
                 textAlign = TextAlign.Center,
             )
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.height(16.dp))
+            OutlinedButton(
+                onClick = {
+                    val message = buildShareMessage(shareMessageTemplate, playerName, correctCount, totalQuestions)
+                    val sendIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_TEXT, message)
+                    }
+                    context.startActivity(Intent.createChooser(sendIntent, shareChooserTitle))
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                // Decorative: the button's own text already announces "Compartilhar pontuação",
+                // so the icon does not need a separate content description.
+                Icon(imageVector = Icons.Filled.Share, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.result_share_button))
+            }
+            Spacer(Modifier.height(24.dp))
             Button(onClick = onRestart, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.result_restart_button))
             }
