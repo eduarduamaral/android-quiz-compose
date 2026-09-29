@@ -82,7 +82,7 @@ fun ResultScreen(
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.result_share_button))
             }
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(12.dp))
             Button(onClick = onRestart, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.result_restart_button))
             }
