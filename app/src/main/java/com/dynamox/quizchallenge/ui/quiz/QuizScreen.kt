@@ -38,7 +38,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -227,7 +230,10 @@ private fun AnswerFeedback(isCorrect: Boolean) {
     }
     val tint = if (isCorrect) SuccessGreen else MaterialTheme.colorScheme.error
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Icon(imageVector = icon, contentDescription = stringResource(descriptionRes), tint = tint)
         Spacer(Modifier.width(8.dp))
         Text(text = stringResource(textRes), color = tint, style = MaterialTheme.typography.titleMedium)
@@ -236,7 +242,10 @@ private fun AnswerFeedback(isCorrect: Boolean) {
 
 @Composable
 private fun ErrorContent(error: AppError, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(text = error.toMessage(), textAlign = TextAlign.Center)
         Spacer(Modifier.height(16.dp))
         Button(onClick = onRetry) { Text(stringResource(R.string.error_retry_button)) }

@@ -1,6 +1,8 @@
 package com.dynamox.quizchallenge.ui.result
 
 import android.content.Intent
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +21,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -56,11 +63,7 @@ fun ResultScreen(
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(16.dp))
-            Text(
-                text = stringResource(R.string.result_score, playerName, correctCount, totalQuestions),
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center,
-            )
+            ResultScoreText(playerName = playerName, correctCount = correctCount, totalQuestions = totalQuestions)
             Spacer(Modifier.height(16.dp))
             OutlinedButton(
                 onClick = {
@@ -93,4 +96,26 @@ fun ResultScreen(
             }
         }
     }
+}
+
+@Composable
+private fun ResultScoreText(
+    playerName: String,
+    correctCount: Int,
+    totalQuestions: Int,
+) {
+    var animationStarted by remember { mutableStateOf(value = false) }
+    LaunchedEffect(Unit) {
+        animationStarted = true
+    }
+    val animatedCorrectCount by animateIntAsState(
+        targetValue = if (animationStarted) correctCount else 0,
+        animationSpec = tween(durationMillis = 1000),
+        label = "result_score_count",
+    )
+    Text(
+        text = stringResource(R.string.result_score, playerName, animatedCorrectCount, totalQuestions),
+        style = MaterialTheme.typography.titleLarge,
+        textAlign = TextAlign.Center,
+    )
 }
