@@ -49,6 +49,30 @@ actually persisted to disk rather than kept only in memory.
 - [x] This **README** with setup instructions, architecture and documented assumptions.
 - [x] **CI** (GitHub Actions) running the full test suite and a debug build on every push.
 
+### Beyond the challenge's checklist
+
+Small, deliberately low-risk additions that go past what was asked, chosen for genuine
+value over "using a technology for its own sake":
+
+- **Score history survives uninstall/reinstall**, via Android's native
+  [Auto Backup for Apps](https://developer.android.com/identity/data/autobackup) — not a
+  custom cloud/Firebase solution. `data_extraction_rules.xml`/`backup_rules.xml` explicitly
+  include the Room database in the automatic backup to the user's Google account, so
+  reinstalling the app (same device, or a new one signed into the same account) restores
+  the score history instead of starting from empty. This was manually verified end-to-end
+  on an emulator: saved real scores, forced a backup (`adb shell bmgr backupnow`),
+  uninstalled the app, reinstalled it, restored (`adb shell bmgr restore`), and confirmed
+  the exact same score history came back. A custom backend (e.g. Firebase Firestore) was
+  considered and deliberately not used here: reliably surviving an uninstall requires the
+  user to be signed into an account either way (a bare device/installation ID resets on
+  reinstall), so reaching for a whole extra cloud dependency to solve a problem the
+  Android platform already solves natively would have added real risk (new SDK, new
+  auth flow, new network failure modes) without adding real value.
+- **"Share score" on the result screen**, wired up to the Android system share sheet.
+  This directly addresses a phrase in the challenge's own user story 2 ("I want to know
+  the final score for the quiz... so that I could share it with friends") that the
+  screen didn't act on before.
+
 ## Requirements NOT pursued (and why)
 
 - **Docker**: the challenge's "Quality & DevOps" bonus mentions Docker as one option to
