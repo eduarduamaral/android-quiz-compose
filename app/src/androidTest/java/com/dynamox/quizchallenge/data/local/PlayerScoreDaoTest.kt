@@ -11,10 +11,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Instrumented test (runs on a device/emulator via `./gradlew connectedAndroidTest`) so Room can
- * use a real SQLite implementation, exercising the actual persistence mechanism end to end.
- */
+/** Runs on a device/emulator so Room is exercised against a real SQLite implementation. */
 @RunWith(AndroidJUnit4::class)
 class PlayerScoreDaoTest {
 

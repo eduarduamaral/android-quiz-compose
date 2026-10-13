@@ -7,9 +7,7 @@ plugins {
     alias(libs.plugins.detekt)
 }
 
-// Android Gradle plugin 9+ compiles Kotlin out of the box (no separate `kotlin-android`
-// plugin needed anymore). Compiler options that used to live under `android.kotlinOptions {}`
-// now live in this top-level `kotlin {}` extension instead.
+// AGP 9+ compiles Kotlin itself; compiler options live in this top-level `kotlin {}` block.
 kotlin {
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
@@ -112,9 +110,7 @@ dependencies {
 }
 
 detekt {
-    // Baseline records pre-existing findings as accepted, so introducing static analysis into
-    // this already-implemented codebase only fails the build on *new* issues going forward,
-    // rather than requiring a large one-off cleanup pass under time pressure.
+    // The baseline records a few reviewed pre-existing findings; only new issues fail the build.
     baseline = file("detekt-baseline.xml")
     config.setFrom(file("$rootDir/config/detekt/detekt.yml"))
     buildUponDefaultConfig = true

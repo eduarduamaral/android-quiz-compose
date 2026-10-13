@@ -1,12 +1,6 @@
 package com.dynamox.quizchallenge.domain.model
 
-/**
- * Immutable snapshot of an in-progress (or finished) quiz run for a single player.
- *
- * Keeping the quiz progress as a single immutable value (instead of scattering mutable
- * `var`s across the ViewModel) makes the scoring/progression rules easy to unit test in
- * isolation and easy to reason about: every transition produces a brand new [QuizSession].
- */
+/** Immutable snapshot of a quiz run; every transition returns a new value. */
 data class QuizSession(
     val playerName: String,
     val totalQuestions: Int = TOTAL_QUESTIONS,

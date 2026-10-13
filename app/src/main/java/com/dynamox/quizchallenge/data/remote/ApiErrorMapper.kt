@@ -6,13 +6,8 @@ import retrofit2.HttpException
 import java.io.IOException
 
 /**
- * Runs [block] (a suspend Retrofit call) and converts any failure into a domain [AppError],
- * so repositories and everything above them never need to know about Retrofit/OkHttp
- * exceptions or raw HTTP status codes.
- *
- * Note: this intentionally does *not* catch a blanket [Exception]. Doing so would also catch
- * [kotlinx.coroutines.CancellationException], which must always propagate for structured
- * concurrency (e.g. cancelling in-flight requests) to keep working correctly.
+ * Runs a suspend Retrofit call and converts failures into a domain [AppError].
+ * Deliberately does not catch a blanket [Exception]: that would swallow CancellationException.
  */
 suspend fun <T> safeApiCall(block: suspend () -> T): Result<T> = try {
     Result.success(block())

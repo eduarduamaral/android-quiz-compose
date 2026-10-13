@@ -16,9 +16,7 @@ import com.dynamox.quizchallenge.ui.nameentry.NameEntryScreen
 import com.dynamox.quizchallenge.ui.quiz.QuizScreen
 import com.dynamox.quizchallenge.ui.result.ResultScreen
 
-// Shared slide+fade transitions for every destination, so moving forward in the quiz flow
-// (name -> quiz -> result) and back always feels directional and consistent, instead of the
-// default abrupt cut.
+// Shared slide+fade transitions so navigation always feels directional.
 private const val TRANSITION_DURATION_MILLIS = 300
 
 private val enterTransition = slideInHorizontally(

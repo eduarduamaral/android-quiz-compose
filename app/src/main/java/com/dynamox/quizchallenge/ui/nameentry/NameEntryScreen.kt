@@ -26,11 +26,8 @@ import androidx.compose.ui.unit.dp
 import com.dynamox.quizchallenge.R
 
 /**
- * First screen: the player types their name/nickname before starting a quiz.
- *
- * This screen intentionally has no ViewModel: the only state is the text the user is
- * typing, which [rememberSaveable] already survives configuration changes/process death,
- * so a ViewModel would just add ceremony without adding any real behavior.
+ * First screen: the player types a name before starting. No ViewModel on purpose: the only state
+ * is the text field, and [rememberSaveable] already survives rotation and process death.
  */
 @Composable
 fun NameEntryScreen(

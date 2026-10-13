@@ -1,13 +1,8 @@
 package com.dynamox.quizchallenge.domain.model
 
 /**
- * Domain-level representation of everything that can go wrong when talking to the quiz backend.
- * The data layer is responsible for translating raw exceptions/HTTP status codes into these
- * types, so the UI and ViewModels never need to know about Retrofit, OkHttp or HTTP codes.
- *
- * Modeled after specific HTTP status codes (as called out by the challenge's bonus
- * requirements: 400 for validation, 404 for not found, 500 for unexpected errors) rather than
- * broad "4xx/5xx" buckets, so each case can carry a distinct, more actionable user message.
+ * Everything that can go wrong when talking to the quiz backend, as seen by the domain and UI.
+ * The data layer maps exceptions and HTTP status codes into these; nothing above it sees HTTP.
  */
 sealed class AppError : Throwable() {
 
@@ -18,12 +13,8 @@ sealed class AppError : Throwable() {
     data object BadRequest : AppError()
 
     /**
-     * HTTP 404: the requested resource does not exist.
-     *
-     * Note: the real backend actually reports an unknown `questionId` as HTTP 400 (with a plain
-     * text body), not 404 -- see [BadRequest] and `QuizRepositoryImplTest`. This case is still
-     * modeled explicitly so the mapping stays correct and complete if the API ever does return a
-     * real 404, instead of silently lumping it into [Unknown].
+     * HTTP 404: the requested resource does not exist. The real backend currently reports an
+     * unknown `questionId` as 400, but the mapping is kept complete.
      */
     data object NotFound : AppError()
 

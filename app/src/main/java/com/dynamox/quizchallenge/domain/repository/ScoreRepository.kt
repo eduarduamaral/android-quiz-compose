@@ -4,7 +4,7 @@ import com.dynamox.quizchallenge.domain.model.PlayerScore
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Local persistence for player names and their quiz scores (mandatory requirement).
+ * Local persistence for player names and their quiz scores.
  * Implemented by the data layer; the domain and UI layers only depend on this interface.
  */
 interface ScoreRepository {

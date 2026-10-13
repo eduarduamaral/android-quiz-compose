@@ -24,23 +24,11 @@ class QuizViewModel @Inject constructor(
     private val saveScoreUseCase: SaveScoreUseCase,
 ) : ViewModel() {
 
-    // Read the nav argument by its key (matches QuizDestination.Quiz.playerName) instead of
-    // using SavedStateHandle.toRoute(), whose decoder goes through android.os.Bundle under the
-    // hood -- that makes it work fine on a device, but throws "not mocked" in plain JVM unit
-    // tests. A direct key lookup behaves identically at runtime and keeps the ViewModel testable
-    // without Robolectric.
-    //
-    // Progress (answeredCount/correctCount/seenQuestionIds) is restored from SavedStateHandle and
-    // re-persisted after every answer, so an in-progress quiz survives the OS killing the app's
-    // process in the background (SavedStateHandle -- unlike a plain ViewModel field -- survives
-    // that, whereas rotation alone would already be covered by the ViewModel itself). The current
-    // question is intentionally not restored this way: init always fetches the next question for
-    // the (possibly restored) session, which naturally continues the quiz where it left off.
+    // Progress lives in SavedStateHandle so a quiz survives process death, not just rotation.
+    // The current question is not persisted: init re-fetches one for the restored session.
     private var session = restoreSession()
 
-    // Guards against overlapping network calls if the user manages to trigger loadNextQuestion()
-    // twice before the first call resolves (e.g. a very fast double-tap on "next"/"retry"). Kept
-    // separate from the exposed Loading state because the initial state is itself Loading.
+    // Prevents a double-tap on "next"/"retry" from starting two overlapping fetches.
     private var isFetchingQuestion = false
 
     private val _uiState = MutableStateFlow<QuizUiState>(QuizUiState.Loading)
@@ -58,8 +46,7 @@ class QuizViewModel @Inject constructor(
 
     fun onSubmitAnswer() {
         val state = _uiState.value as? QuizUiState.InProgress ?: return
-        // Guards against a fast double-tap submitting the same answer twice: isAnswerRevealed
-        // alone isn't enough here since it only flips *after* the first network call resolves.
+        // isAnswerRevealed only flips after the network call resolves; isSubmitting covers the gap.
         if (state.isAnswerRevealed || state.isSubmitting) return
         val option = state.selectedOption ?: return
         submitAnswer(state, option)
@@ -132,6 +119,8 @@ class QuizViewModel @Inject constructor(
     )
 
     private fun restoreSession(): QuizSession {
+        // Read by key rather than SavedStateHandle.toRoute(): the latter goes through
+        // android.os.Bundle and fails in plain JVM unit tests.
         val playerName = checkNotNull(savedStateHandle.get<String>(PLAYER_NAME_ARG)) {
             "Missing '$PLAYER_NAME_ARG' navigation argument"
         }

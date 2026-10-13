@@ -1,31 +1,17 @@
-## Custom detekt configuration for this project.
-#
-# `buildUponDefaultConfig: true` (set in app/build.gradle.kts) means this file only needs to
-# describe the *deltas* from detekt's built-in default ruleset -- everything not mentioned here
-# still uses the default. Pre-existing findings that aren't addressed below are recorded in
-# app/detekt-baseline.xml instead, so introducing static analysis into an already-implemented
-# codebase only fails the build on genuinely *new* issues going forward.
+# Deltas from detekt's default ruleset (buildUponDefaultConfig = true in app/build.gradle.kts).
+# Reviewed pre-existing findings live in app/detekt-baseline.xml.
 
 complexity:
   LongParameterList:
-    # Compose functions idiomatically take several parameters (UI state fields + one callback per
-    # user action, e.g. QuizScreen's onOptionSelected/onSubmit/onNext/onRetry). The default
-    # threshold of 6 flags many ordinary, readable Composables; 8 accommodates that without
-    # disabling the check outright.
+    # Composables take one parameter per piece of state plus one callback per user action.
     functionThreshold: 8
 
 naming:
   FunctionNaming:
-    # Jetpack Compose's own convention is that a @Composable function is PascalCase (it behaves
-    # like a "virtual widget" more than an ordinary function, e.g. `QuizScreen`, `OptionRow`),
-    # which is exactly what detekt's default (function-naming-expects-camelCase) rule flags.
-    # This is a well-known, documented mismatch between detekt's defaults and Compose -- the
-    # correct fix is exempting @Composable functions, not suppressing each finding individually.
+    # Compose convention: @Composable functions are PascalCase.
     ignoreAnnotated: ['Composable']
 
 style:
   MagicNumber:
-    # Not a meaningful signal for this project: this mostly flags self-explanatory UI constants
-    # (e.g. `24.dp` padding, a `300`ms animation duration) that are clearer written inline than
-    # extracted into named constants for a codebase this size.
+    # Mostly flags self-explanatory UI constants (24.dp, 300ms) for a codebase this size.
     active: false

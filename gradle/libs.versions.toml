@@ -1,6 +1,4 @@
 [versions]
-# Versions resolved from live Google Maven / Maven Central metadata at scaffold time (2026-09-24),
-# picking the latest non-alpha/beta/rc release of each artifact.
 agp = "9.4.1"
 kotlin = "2.4.20"
 ksp = "2.3.12"

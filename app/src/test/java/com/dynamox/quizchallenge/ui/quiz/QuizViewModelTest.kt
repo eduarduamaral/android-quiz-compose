@@ -219,10 +219,8 @@ class QuizViewModelTest {
 
     @Test
     fun `a fast double-tap on submit only counts the answer once`() = runTest {
-        // Regression test: onSubmitAnswer() used to only guard on isAnswerRevealed, which stays
-        // false until the *first* call's network response comes back. Calling it twice in a row
-        // (before either coroutine has had a chance to run) used to schedule two submissions for
-        // a single tap, double-counting the score.
+        // Regression: isAnswerRevealed alone stays false until the first call resolves, so two
+        // immediate taps used to schedule two submissions.
         quizRepository.enqueueQuestion(question("1"))
         quizRepository.answerResult = true
         val viewModel = createViewModel()
@@ -297,15 +295,12 @@ class QuizViewModelTest {
             assertEquals("2", state.question.id)
             expectNoEvents()
         }
-        // Only one of the two enqueued follow-up fetches should have been consumed: the initial
-        // load already consumed question "1", so exactly one more call for question "2".
+        // Initial load consumed "1"; exactly one more fetch should have consumed "2".
         assertEquals(2, quizRepository.fetchQuestionCallCount)
     }
 
     @Test
     fun `restores progress from SavedStateHandle after process death`() = runTest {
-        // Simulates the ViewModel being recreated after the OS killed the process mid-quiz:
-        // progress persisted via SavedStateHandle should be picked up instead of starting over.
         quizRepository.enqueueQuestion(question("2")) // already seen -> triggers a retry
         quizRepository.enqueueQuestion(question("4")) // fresh question
         val viewModel = createViewModel(

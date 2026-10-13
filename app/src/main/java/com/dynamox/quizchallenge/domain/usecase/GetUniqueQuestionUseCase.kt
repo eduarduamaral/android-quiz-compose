@@ -5,13 +5,9 @@ import com.dynamox.quizchallenge.domain.repository.QuizRepository
 import javax.inject.Inject
 
 /**
- * Fetches the next question for a quiz session, avoiding immediate repeats when possible.
- *
- * The public quiz API returns a random question on every call and never excludes questions
- * that were already served, so within a single 10-question run the same question could be
- * returned twice. This use case retries a few times when that happens; if the question pool
- * turns out to be too small to avoid a repeat, it falls back to whatever the server last
- * returned instead of leaving the user stuck in a retry loop.
+ * Fetches the next question, avoiding repeats within a run. The API returns a random question on
+ * every call and never excludes ones already served, so this retries a few times on a repeat and
+ * falls back to the last result rather than looping forever.
  */
 class GetUniqueQuestionUseCase @Inject constructor(
     private val quizRepository: QuizRepository,

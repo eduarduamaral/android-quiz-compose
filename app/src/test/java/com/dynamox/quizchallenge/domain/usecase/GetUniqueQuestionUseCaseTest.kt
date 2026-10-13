@@ -49,8 +49,7 @@ class GetUniqueQuestionUseCaseTest {
 
         val result = useCase(seenQuestionIds = setOf("1"))
 
-        // Every attempt returned the already-seen id "1": the use case gives up after 5 tries
-        // instead of looping forever, and returns that last (repeated) result to the caller.
+        // Every attempt returned the already-seen "1": gives up after 5 tries and returns it.
         assertEquals("1", result.getOrThrow().id)
         coVerify(exactly = 5) { repository.fetchQuestion() }
     }

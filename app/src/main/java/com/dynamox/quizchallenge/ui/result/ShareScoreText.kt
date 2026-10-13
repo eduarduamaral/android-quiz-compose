@@ -1,13 +1,8 @@
 package com.dynamox.quizchallenge.ui.result
 
 /**
- * Builds the plain-text message shared via the Android system share sheet, addressing user
- * story 2 ("...so that I could share it with friends").
- *
- * [template] must use the same positional placeholders (%1$s player name, %2$d correct count,
- * %3$d total questions) as `R.string.result_share_message`. It is resolved by the caller (a
- * Composable, via `stringResource`) and passed in here, so this function stays a plain,
- * Android-`Context`-free unit that is trivial to unit test without Robolectric.
+ * Builds the plain-text message for the system share sheet. [template] is resolved by the caller
+ * (via `stringResource`) so this stays a Context-free function that is trivial to unit test.
  */
 fun buildShareMessage(
     template: String,

@@ -24,11 +24,8 @@ class QuizRepositoryImpl @Inject constructor(
             api.submitAnswer(questionId, AnswerRequestDto(answer)).result
         }
 
-    /**
-     * Guards against a structurally valid but unusable response (e.g. an empty or single-option
-     * `options` list), which would otherwise render a question the player can never answer,
-     * silently soft-locking the quiz screen instead of surfacing a visible, retryable error.
-     */
+    // A question with fewer than two options would leave the submit button disabled forever,
+    // so it is rejected here and surfaces as a retryable error instead.
     private fun Question.requireValidOptions(): Question {
         if (options.size < MIN_OPTIONS) {
             throw AppError.Unknown("Question '$id' returned ${options.size} option(s), expected at least $MIN_OPTIONS")

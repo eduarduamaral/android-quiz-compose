@@ -16,8 +16,8 @@ import org.junit.Test
 import retrofit2.Retrofit
 
 /**
- * Integration test: exercises [QuizRepositoryImpl] against a real (local) HTTP server instead
- * of mocking Retrofit/OkHttp, so it also verifies the serialization + error-mapping wiring.
+ * Exercises [QuizRepositoryImpl] against a local HTTP server, so serialization and error mapping
+ * are verified through the real Retrofit/OkHttp stack.
  */
 class QuizRepositoryImplTest {
 
@@ -56,9 +56,6 @@ class QuizRepositoryImplTest {
 
     @Test
     fun `fetchQuestion fails when the response has fewer than 2 options`() = runTest {
-        // A structurally valid but unusable response (e.g. a backend bug returning an empty or
-        // single-option question) must not silently render an unanswerable question; it should
-        // surface as a failure so the UI shows a retryable error state instead.
         server.enqueue(
             MockResponse().setResponseCode(200)
                 .setBody("""{"id":"22","statement":"What?","options":["Only one"]}"""),
@@ -81,9 +78,7 @@ class QuizRepositoryImplTest {
 
     @Test
     fun `submitAnswer maps a plain-text 400 response to AppError BadRequest`() = runTest {
-        // The real backend returns a *plain text* body (not JSON) for this error, e.g.
-        // "400 BAD REQUEST: Question not found." This guards against ever assuming the
-        // error body is parseable JSON.
+        // The real backend answers an unknown questionId with a plain-text 400 body, not JSON.
         server.enqueue(MockResponse().setResponseCode(400).setBody("400 BAD REQUEST: Question not found."))
 
         val result = repository.submitAnswer("unknown-id", "A")
@@ -93,9 +88,6 @@ class QuizRepositoryImplTest {
 
     @Test
     fun `fetchQuestion maps a 404 response to AppError NotFound`() = runTest {
-        // The real backend doesn't happen to return 404 for anything today (an unknown
-        // questionId comes back as 400, see the test above), but the mapper still handles
-        // this status code explicitly and correctly per the challenge's error-handling bonus.
         server.enqueue(MockResponse().setResponseCode(404).setBody("Not Found"))
 
         val result = repository.fetchQuestion()

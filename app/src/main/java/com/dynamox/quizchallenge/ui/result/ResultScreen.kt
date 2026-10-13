@@ -76,8 +76,7 @@ fun ResultScreen(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                // Decorative: the button's own text already announces "Compartilhar pontuação",
-                // so the icon does not need a separate content description.
+                // Decorative: the button text already says what it does.
                 Icon(imageVector = Icons.Filled.Share, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
                 Text(stringResource(R.string.result_share_button))

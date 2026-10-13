@@ -5,7 +5,7 @@ import com.dynamox.quizchallenge.domain.repository.ScoreRepository
 import java.time.Instant
 import javax.inject.Inject
 
-/** Persists the result of a finished quiz run (user story 3.2). */
+/** Persists the result of a finished quiz run. */
 class SaveScoreUseCase @Inject constructor(
     private val scoreRepository: ScoreRepository,
 ) {
