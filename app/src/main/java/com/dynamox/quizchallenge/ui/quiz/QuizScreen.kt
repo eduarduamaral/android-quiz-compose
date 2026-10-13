@@ -81,7 +81,7 @@ fun QuizScreen(
 }
 
 @Composable
-private fun QuizContent(
+internal fun QuizContent(
     uiState: QuizUiState,
     onOptionSelected: (String) -> Unit,
     onSubmit: () -> Unit,
