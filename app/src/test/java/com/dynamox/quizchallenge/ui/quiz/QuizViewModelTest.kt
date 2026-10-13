@@ -140,6 +140,7 @@ class QuizViewModelTest {
             awaitItem() // Loading
             val error = awaitItem() as QuizUiState.Error
             assertEquals(AppError.Network, error.error)
+            assertEquals(RetryAction.LoadQuestion, error.retryAction)
         }
     }
 
@@ -160,6 +161,60 @@ class QuizViewModelTest {
             val state = awaitItem() as QuizUiState.InProgress
             assertEquals("1", state.question.id)
         }
+    }
+
+    @Test
+    fun `a failed submission keeps the current question and offers to resubmit it`() = runTest {
+        quizRepository.enqueueQuestion(question("1"))
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            awaitItem() // InProgress, unanswered
+            viewModel.onOptionSelected("A")
+            awaitItem() // selected
+
+            quizRepository.nextFailure = AppError.ServerError
+            viewModel.onSubmitAnswer()
+            awaitItem() // isSubmitting = true
+
+            val error = awaitItem() as QuizUiState.Error
+            assertEquals(AppError.ServerError, error.error)
+            assertEquals(RetryAction.SubmitAnswer(question("1"), "A"), error.retryAction)
+        }
+    }
+
+    @Test
+    fun `retrying a failed submission resubmits the same answer instead of fetching a new question`() = runTest {
+        quizRepository.enqueueQuestion(question("1"))
+        quizRepository.answerResult = true
+        val viewModel = createViewModel()
+
+        viewModel.uiState.test {
+            awaitItem() // Loading
+            awaitItem() // InProgress, unanswered
+            viewModel.onOptionSelected("A")
+            awaitItem() // selected
+            quizRepository.nextFailure = AppError.Network
+            viewModel.onSubmitAnswer()
+            awaitItem() // isSubmitting = true
+            awaitItem() // Error
+
+            quizRepository.nextFailure = null
+            viewModel.onRetry()
+
+            val resubmitting = awaitItem() as QuizUiState.InProgress
+            assertEquals("1", resubmitting.question.id)
+            assertEquals("A", resubmitting.selectedOption)
+            assertEquals(true, resubmitting.isSubmitting)
+
+            val revealed = awaitItem() as QuizUiState.InProgress
+            assertEquals("1", revealed.question.id)
+            assertEquals(true, revealed.revealedCorrect)
+            assertEquals(1, revealed.correctCountSoFar)
+        }
+        assertEquals(1, quizRepository.fetchQuestionCallCount)
+        assertEquals(2, quizRepository.submitAnswerCallCount)
     }
 
     @Test

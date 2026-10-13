@@ -37,7 +37,6 @@ class QuizViewModel @Inject constructor(
     // question is intentionally not restored this way: init always fetches the next question for
     // the (possibly restored) session, which naturally continues the quiz where it left off.
     private var session = restoreSession()
-    private var currentQuestion: Question? = null
 
     // Guards against overlapping network calls if the user manages to trigger loadNextQuestion()
     // twice before the first call resolves (e.g. a very fast double-tap on "next"/"retry"). Kept
@@ -63,14 +62,7 @@ class QuizViewModel @Inject constructor(
         // alone isn't enough here since it only flips *after* the first network call resolves.
         if (state.isAnswerRevealed || state.isSubmitting) return
         val option = state.selectedOption ?: return
-        val question = currentQuestion ?: return
-        _uiState.value = state.copy(isSubmitting = true)
-        viewModelScope.launch {
-            submitAnswerUseCase(question.id, option).fold(
-                onSuccess = { isCorrect -> onAnswerRevealed(state, isCorrect) },
-                onFailure = { error -> _uiState.value = QuizUiState.Error(error.toAppError()) },
-            )
-        }
+        submitAnswer(state, option)
     }
 
     /** Called when the player taps "next question" (or "see result" on the last question). */
@@ -78,9 +70,28 @@ class QuizViewModel @Inject constructor(
         loadNextQuestion()
     }
 
-    /** Called from the error state's retry button; simply attempts to load a question again. */
+    /** Called from the error state's retry button; replays whichever operation failed. */
     fun onRetry() {
-        loadNextQuestion()
+        val action = (_uiState.value as? QuizUiState.Error)?.retryAction ?: return
+        when (action) {
+            RetryAction.LoadQuestion -> loadNextQuestion()
+            is RetryAction.SubmitAnswer -> submitAnswer(inProgressState(action.question), action.option)
+        }
+    }
+
+    private fun submitAnswer(state: QuizUiState.InProgress, option: String) {
+        _uiState.value = state.copy(selectedOption = option, isSubmitting = true)
+        viewModelScope.launch {
+            submitAnswerUseCase(state.question.id, option).fold(
+                onSuccess = { isCorrect -> onAnswerRevealed(state, isCorrect) },
+                onFailure = { error ->
+                    _uiState.value = QuizUiState.Error(
+                        error = error.toAppError(),
+                        retryAction = RetryAction.SubmitAnswer(state.question, option),
+                    )
+                },
+            )
+        }
     }
 
     private suspend fun onAnswerRevealed(state: QuizUiState.InProgress, isCorrect: Boolean) {
@@ -103,21 +114,22 @@ class QuizViewModel @Inject constructor(
         viewModelScope.launch {
             getUniqueQuestion(session.seenQuestionIds).fold(
                 onSuccess = { question ->
-                    currentQuestion = question
                     isFetchingQuestion = false
-                    _uiState.value = QuizUiState.InProgress(
-                        questionNumber = session.answeredCount + 1,
-                        totalQuestions = session.totalQuestions,
-                        question = question,
-                    )
+                    _uiState.value = inProgressState(question)
                 },
                 onFailure = { error ->
                     isFetchingQuestion = false
-                    _uiState.value = QuizUiState.Error(error.toAppError())
+                    _uiState.value = QuizUiState.Error(error.toAppError(), RetryAction.LoadQuestion)
                 },
             )
         }
     }
+
+    private fun inProgressState(question: Question) = QuizUiState.InProgress(
+        questionNumber = session.answeredCount + 1,
+        totalQuestions = session.totalQuestions,
+        question = question,
+    )
 
     private fun restoreSession(): QuizSession {
         val playerName = checkNotNull(savedStateHandle.get<String>(PLAYER_NAME_ARG)) {
@@ -137,8 +149,6 @@ class QuizViewModel @Inject constructor(
         savedStateHandle[KEY_SEEN_QUESTION_IDS] = ArrayList(session.seenQuestionIds)
     }
 
-    private fun Throwable.toAppError(): AppError = this as? AppError ?: AppError.Unknown(message)
-
     private companion object {
         const val PLAYER_NAME_ARG = "playerName"
         const val KEY_ANSWERED_COUNT = "quiz_answeredCount"
@@ -146,3 +156,5 @@ class QuizViewModel @Inject constructor(
         const val KEY_SEEN_QUESTION_IDS = "quiz_seenQuestionIds"
     }
 }
+
+private fun Throwable.toAppError(): AppError = this as? AppError ?: AppError.Unknown(message)

@@ -20,5 +20,11 @@ sealed interface QuizUiState {
         val isAnswerRevealed: Boolean get() = revealedCorrect != null
     }
 
-    data class Error(val error: AppError) : QuizUiState
+    data class Error(val error: AppError, val retryAction: RetryAction) : QuizUiState
+}
+
+/** What the retry button in [QuizUiState.Error] should do: replay the operation that failed. */
+sealed interface RetryAction {
+    data object LoadQuestion : RetryAction
+    data class SubmitAnswer(val question: Question, val option: String) : RetryAction
 }
